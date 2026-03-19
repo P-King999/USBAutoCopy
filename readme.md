@@ -1,19 +1,247 @@
-# U 盘智能增量备份工具
+# U 盘智能增量备份工具 / USB Smart Incremental Backup Tool
 
-> 基于 PowerShell 的 U 盘自动备份解决方案，支持智能增量备份，静默运行不干扰用户操作。
+[English](#english) | [中文](#chinese)
 
 ---
 
+<h2 id="english">English</h2>
+
+> A PowerShell-based automated USB backup solution with smart incremental backup, running silently without interfering with user operations.
+
+## 📋 Table of Contents
+
+- [Introduction](#introduction)
+- [Key Features](#key-features)
+- [File Overview](#file-overview)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Backup Mechanism](#backup-mechanism)
+- [FAQ](#faq)
+- [Notes](#notes)
+
+---
+
+## 📖 Introduction
+
+This tool is a **PowerShell-based** automated USB backup solution. When a USB drive is detected, it automatically backs up files to a specified directory, supporting **smart incremental backup** with silent operation.
+
+**Use Cases:**
+- Regular backup of important USB files
+- Automatic backup upon USB insertion without manual operation
+- Historical backup version retention with incremental updates
+
+---
+
+## ✨ Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| 🔄 **Auto Monitoring** | Background USB insertion event listening, no manual trigger required |
+| 📦 **Incremental Backup** | MD5 hash-based comparison, only copies new or modified files |
+| 🙈 **Silent Mode** | Hidden console window during operation, no interference |
+| 📝 **Detailed Logs** | Independent log file for each backup with copy details and errors |
+| 🔧 **High Compatibility** | Compatible with PowerShell 5.1+ and .NET 4.0+ |
+
+---
+
+## 📁 File Overview
+
+| File Name | Description |
+| :--- | :--- |
+| `USBAutoCopy.ps1` | **Core Script**: Executes monitoring and backup logic |
+| `启动脚本.bat` | **Manual Test**: Double-click to run core script in hidden mode |
+| `设置开机自启动.ps1` | **Auto-Start Config**: Creates shortcut in Startup folder |
+| `关闭开机自启动.ps1` | **Disable Auto-Start**: Removes shortcut from Startup folder |
+| `停止脚本.ps1` | **Stop Service**: Forcefully ends running backup process |
+| `清理桌面备份.ps1` | **Cleanup Tool**: Removes old backup files left on desktop |
+
+---
+
+## 🚀 Quick Start
+
+### 1️⃣ First-Time Setup
+
+```powershell
+# Open PowerShell as Administrator and set execution policy
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### 2️⃣ Manual Run (Testing)
+
+```bash
+# Double-click 启动脚本.bat
+# Script runs in background, insert USB and check target directory for backups
+```
+
+### 3️⃣ Enable Auto-Start on Boot
+
+```powershell
+# Right-click 设置开机自启动.ps1, select "Run with PowerShell"
+# "Auto-start configured successfully" means completion
+# Script will run automatically after system reboot
+```
+
+### 4️⃣ Stop the Script
+
+```powershell
+# Run 停止脚本.ps1 to end background monitoring
+# Or end powershell.exe process in Task Manager
+```
+
+### 5️⃣ Disable Auto-Start
+
+```powershell
+# Run 关闭开机自启动.ps1 to remove boot startup entry
+```
+
+---
+
+## ⚙️ Configuration
+
+To modify the backup save path, edit `USBAutoCopy.ps1`:
+
+```powershell
+# Find the following variable (around line 15)
+$savePath = "D:\ProgramDate\appcompat\usb"
+
+# Change to your desired absolute path
+$savePath = "E:\MyBackups\USB"
+
+# Save the file
+```
+
+**Configurable Items:**
+
+| Item | Default Value | Description |
+| :--- | :--- | :--- |
+| `$savePath` | `D:\ProgramDate\appcompat\usb` | Root directory for backup files |
+| `Start-Sleep` | `8 seconds` | Wait time for USB mount after insertion |
+| `Check Interval` | `5 seconds` | USB event listening interval |
+
+---
+
+## 🔍 Backup Mechanism
+
+### Unique Identification
+
+Generates unique folder based on **USB Volume Label** and **Serial Number**:
+
+```
+U 盘备份_MYUSB_A1B2C3D4/
+├── 备份_20260303_143022/
+├── 备份_20260303_151508/
+└── FileHashCache.json
+```
+
+### Incremental Logic
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  First USB Insertion                                     │
+│  → Copy all files                                        │
+│  → Generate MD5 hash cache                               │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│  Subsequent Insertions                                   │
+│  → Calculate file MD5 hash                               │
+│  → Compare with cache                                    │
+│  → Hash unchanged → Skip                                 │
+│  → Hash changed → Copy                                   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### File Structure
+
+```
+D:\ProgramDate\appcompat\usb/
+├── 脚本启动日志.txt
+├── U 盘备份_MYUSB_A1B2C3D4/
+│   ├── 备份_20260303_143022/
+│   │   ├── Documents/
+│   │   ├── Pictures/
+│   │   └── USBCopyLog.txt
+│   ├── 备份_20260303_151508/
+│   └── FileHashCache.json
+└── U 盘备份_OTHER_C4D5E6F7/
+    └── ...
+```
+
+---
+
+## ❓ FAQ
+
+### Q1: Script runs but no response?
+
+```powershell
+# Check execution policy
+Get-ExecutionPolicy
+
+# If Restricted, execute:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### Q2: How to view backup logs?
+
+```
+# Log file location:
+D:\ProgramDate\appcompat\usb\U 盘备份_*\备份_*\USBCopyLog.txt
+```
+
+### Q3: How to completely stop the script?
+
+```powershell
+# Method 1: Run stop script
+.\停止脚本.ps1
+
+# Method 2: End process via Task Manager
+# Find powershell.exe → Right-click → End Task
+```
+
+### Q4: Too many backup files, how to clean up?
+
+```powershell
+# Run cleanup script (only cleans desktop leftovers)
+.\清理桌面备份.ps1
+
+# Manual cleanup:
+# Navigate to D:\ProgramDate\appcompat\usb\U 盘备份_*\
+# Delete unwanted 备份_* folders
+```
+
+---
+
+## ⚠️ Notes
+
+| Item | Description |
+| :--- | :--- |
+| 🔐 **Permission** | Script accesses system event logs, recommend running as Administrator |
+| 💾 **Disk Space** | Ensure backup target drive has sufficient storage space |
+| 📂 **File Format** | Backups retain original file structure, directly browsable |
+| 🔄 **Safe Removal** | Safely remove USB after backup completes to avoid data corruption |
+| 📝 **Log Retention** | Recommend periodic cleanup of old logs to save space |
+
+---
+
+> **Version:** 2026-03-03 Final Compatible Edition  
+> **Requirements:** Windows 7+ / PowerShell 5.1+ / .NET 4.0+
+
+---
+
+<h2 id="chinese">中文</h2>
+
+> 基于 PowerShell 的 U 盘自动备份解决方案，支持智能增量备份，静默运行不干扰用户操作。
+
 ## 📋 目录
 
-- [项目简介](#-项目简介)
-- [核心功能](#-核心功能)
-- [文件说明](#-文件说明)
-- [快速开始](#-快速开始)
-- [配置说明](#-配置说明)
-- [备份机制详解](#-备份机制详解)
-- [常见问题](#-常见问题)
-- [注意事项](#-注意事项)
+- [项目简介](#项目简介)
+- [核心功能](#核心功能)
+- [文件说明](#文件说明)
+- [快速开始](#快速开始)
+- [配置说明](#配置说明)
+- [备份机制详解](#备份机制详解)
+- [常见问题](#常见问题)
+- [注意事项](#注意事项)
 
 ---
 
@@ -216,15 +444,6 @@ D:\ProgramDate\appcompat\usb\U 盘备份_*\备份_*\USBCopyLog.txt
 | 📂 **文件格式** | 备份保留原始文件结构，可直接浏览查看 |
 | 🔄 **U 盘安全移除** | 备份完成后再安全移除 U 盘，避免数据损坏 |
 | 📝 **日志保留** | 建议定期清理旧日志文件，避免占用过多空间 |
-
----
-
-## 📞 技术支持
-
-如遇问题，请检查：
-1. PowerShell 执行策略是否已配置
-2. 备份目录是否有写入权限
-3. 日志文件中的错误信息
 
 ---
 
