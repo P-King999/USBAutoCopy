@@ -1,0 +1,5 @@
+@echo off
+REM U?????????
+REM ??????
+
+powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "D:\code\upan\USBAutoCopy.ps1"
